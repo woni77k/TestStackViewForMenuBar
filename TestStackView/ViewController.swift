@@ -11,27 +11,14 @@ import UIKit
 class ViewController: UIViewController {
 
   
-  let titles = ["2323232", "323", "99999999999", "5656"]
+  let titles = ["2323232", "323", "99999999999", "5656", "333", "555555555", "2222222"]
   let spacing: CGFloat = 20
   
-  let scrollView: UIScrollView = {
-    let sv = UIScrollView()
-    sv.translatesAutoresizingMaskIntoConstraints = false
-    sv.isScrollEnabled = true
-    sv.alwaysBounceHorizontal = true
-    sv.alwaysBounceVertical = false
-    return sv
-  }()
-  
-  lazy var stackView: CStackView = {
-    let sv = CStackView()
-    sv.translatesAutoresizingMaskIntoConstraints = false
-    sv.axis = .horizontal
-    sv.alignment = UIStackView.Alignment.center
-    sv.distribution = UIStackView.Distribution.equalSpacing
-    sv.spacing = spacing
-    sv.setNeedsLayout()
-    return sv
+  lazy var stackScrollView: StackScrollView = {
+    let ssv = StackScrollView()
+    ssv.translatesAutoresizingMaskIntoConstraints = false
+    ssv.showsHorizontalScrollIndicator = false
+    return ssv
   }()
   
   lazy var collectionView: UICollectionView = {
@@ -55,60 +42,28 @@ class ViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     // Do anyadditional setup after loading the view.
-    
-    view.addSubview(scrollView)
-    scrollView.addSubview(stackView)
+
+    view.addSubview(stackScrollView)
     view.addSubview(collectionView)
     
-    stackView.configure(titles: titles, index: 0, textColor: .darkGray, selectedTextColor: .red, font: UIFont.systemFont(ofSize: 14), selectedFont: UIFont.boldSystemFont(ofSize: 14))
-    stackView.tapHander = { [weak self] index in
-      let indexPath = IndexPath(item: index, section: 0)
-      self?.collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
-    }
+    stackScrollView.configure(titles: titles, index: 0, textColor: .darkGray, selectedTextColor: .red, font: UIFont.systemFont(ofSize: 18), selectedFont: UIFont.systemFont(ofSize: 18))
     
-//    let button = UIButton()
-//    button.translatesAutoresizingMaskIntoConstraints = false
-//    button.backgroundColor = .red
-//    button.setTitle("Go", for: .normal)
-//    button.addTarget(self, action: #selector(tapHandle), for: .touchUpInside)
-//    view.addSubview(button)
-//    NSLayoutConstraint.activate([
-//      button.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 100),
-//      button.heightAnchor.constraint(equalToConstant: 20),
-//      button.widthAnchor.constraint(equalToConstant: 100),
-//      button.centerXAnchor.constraint(equalTo: view.centerXAnchor)
-//      ])
-    
-//    var titleSizes = [CGFloat]()
-//
-//    for i in 0...8 {
-//      let label = UILabel()
-//      label.text = "Number:\(i)"
-//      label.font = UIFont.systemFont(ofSize: 12)
-//
-//      stackView.addArrangedSubview(label)
-//      label.sizeToFit()
-//      titleSizes.append(label.bounds.size.width)
-//    }
-//
-//    let totalSize =  titleSizes.reduce(0, +)//stackView.arrangedSubviews.map { $0.bounds.size.width }
-    let conSize = stackView.totalSiz() + CGFloat(titles.count - 1) * spacing
-    stackView.frame = CGRect(x: 0, y: 0, width: conSize, height: 50)
-    scrollView.contentSize = CGSize(width: conSize, height: 50)
     
     NSLayoutConstraint.activate([
-      scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-      scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-      scrollView.heightAnchor.constraint(equalToConstant: 50),
-      scrollView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+      stackScrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
+      stackScrollView.leftAnchor.constraint(equalTo: view.leftAnchor),
+      stackScrollView.rightAnchor.constraint(equalTo: view.rightAnchor),
+      stackScrollView.heightAnchor.constraint(equalToConstant: 50)
       ])
 
     NSLayoutConstraint.activate([
-      collectionView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 10),
+      collectionView.topAnchor.constraint(equalTo: stackScrollView.bottomAnchor, constant: 10),
       collectionView.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 0),
       collectionView.rightAnchor.constraint(equalTo: view.rightAnchor, constant: 0),
       collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
       ])
+    
+  
   }
   
   @objc func tapHandle() {
@@ -118,15 +73,14 @@ class ViewController: UIViewController {
   
   override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
-    stackView.layoutIfNeeded()
   }
 }
 
 extension ViewController: UICollectionViewDelegate {
   
   func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-    let index = targetContentOffset.pointee.x / view.frame.width
-    stackView.selected(index: Int(index))
+//    let index = targetContentOffset.pointee.x / view.frame.width
+ 
     print("** willEndDragging")
   }
   
@@ -139,7 +93,7 @@ extension ViewController: UICollectionViewDelegate {
     
     guard collectionView.isDragging, collectionView.isTracking, !collectionView.isDecelerating else { return }
     
-     stackView.leftAnchorConstraint?.constant = scrollView.contentOffset.x * (stackView.currentSize() / view.bounds.size.width)
+//     stackView.leftAnchorConstraint?.constant = scrollView.contentOffset.x * (stackView.currentSize() / view.bounds.size.width)
   }
 }
 
@@ -161,13 +115,32 @@ extension ViewController: UICollectionViewDataSource {
   }
 }
 
-
-
-
-
-
-final class CStackView: UIStackView {
+//
+class StackScrollView: UIScrollView {
+  lazy var stackView: UIStackView = {
+    let sv = UIStackView()
+    sv.translatesAutoresizingMaskIntoConstraints = false
+    sv.axis = .horizontal
+    sv.alignment = .center
+    
+    sv.distribution = .equalSpacing
+    sv.spacing = 10
+    sv.setNeedsLayout()
+    return sv
+  }()
   
+  let bar: UIView = {
+    let v = UIView()
+    v.translatesAutoresizingMaskIntoConstraints = false
+    v.backgroundColor = .red
+    return v
+  }()
+  
+  var spacing: CGFloat = 0 {
+    didSet {
+      stackView.spacing = spacing
+    }
+  }
   
   var tapHander: ((Int) -> ())?
   
@@ -176,96 +149,89 @@ final class CStackView: UIStackView {
   
   private var font: UIFont?
   private var selectedFont: UIFont?
-  
-  var leftAnchorConstraint: NSLayoutConstraint?
-  private var widthAnchorConstraint: NSLayoutConstraint?
   private var currentIndex = 0
-  
-  private let barView: UIView = {
-    let v = UIView()
-    v.translatesAutoresizingMaskIntoConstraints = false
-    v.backgroundColor = .red
-    v.setNeedsLayout()
-    return v
-  }()
-  
 
-  
-//  init(titles: [String], index: Int, textColor: UIColor, selectedTextColor: UIColor, font: UIFont, selectedFont: UIFont) {
-  
-//    self.currentIndex = index
-//    self.textColor = textColor
-//    self.selectedTextColor = selectedTextColor
-//    self.font = font
-//    self.selectedFont = selectedFont
-    
-//    super.init(frame: .zero)
-//    setupViews()
-    
-//    setButtons(titles: titles)
-//    update()
-//  }
-  
+  var leftAnchorConstraint: NSLayoutConstraint!
+  private var widthAnchorConstraint: NSLayoutConstraint!
+
   override init(frame: CGRect) {
     super.init(frame: frame)
+
+    addSubview(stackView)
+    addSubview(bar)
+
+    NSLayoutConstraint.activate([
+      stackView.topAnchor.constraint(equalTo: topAnchor),
+      stackView.leftAnchor.constraint(equalTo: leftAnchor),
+      stackView.rightAnchor.constraint(equalTo: rightAnchor),
+      stackView.bottomAnchor.constraint(equalTo: bar.topAnchor, constant: -4)
+      ])
     
-    setupViews()
+    
+    leftAnchorConstraint = bar.leftAnchor.constraint(equalTo: leftAnchor, constant: 0)
+    leftAnchorConstraint.isActive = true
+    widthAnchorConstraint = bar.widthAnchor.constraint(equalToConstant: 0)
+    widthAnchorConstraint.isActive = true
+    
+    NSLayoutConstraint.activate([
+      bar.bottomAnchor.constraint(equalTo: bottomAnchor),
+      bar.heightAnchor.constraint(equalToConstant: 3)
+      ])
   }
-  
-  required init(coder: NSCoder) {
+
+  required init?(coder aDecoder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
   
+  override func layoutSubviews() {
+    super.layoutSubviews()
+
+    contentSize = stackView.frame.size
+  }
+  
   func configure(titles: [String], index: Int, textColor: UIColor, selectedTextColor: UIColor, font: UIFont, selectedFont: UIFont) {
-    
     self.currentIndex = index
     self.textColor = textColor
     self.selectedTextColor = selectedTextColor
     self.font = font
     self.selectedFont = selectedFont
     setButtons(titles: titles)
+    
+    let isOverSize = bounds.size.width - (totalSiz() + CGFloat(titles.count - 1) * 50)
+    
+    // set contents Size
+    layoutIfNeeded()
+    
+    //
     update()
   }
   
-  private func setButtons(titles: [String]) {
-    for (i, title) in titles.enumerated() {
-      let b = UIButton()
-      b.addTarget(self, action: #selector(tapHandler), for: .touchUpInside)
-      b.setTitle(title, for: .normal)
-      b.tag = i
-      addArrangedSubview(b)
-    }
-  }
-  
-  private func update() {
-    let _  = arrangedSubviews.map {
+  func update() {
+    stackView.arrangedSubviews.forEach({
       let isSelected = $0.tag == currentIndex
       ($0 as? UIButton)?.setTitleColor(isSelected ? selectedTextColor : textColor, for: .normal)
       ($0 as? UIButton)?.titleLabel?.font = isSelected ? selectedFont : font
       
       if isSelected {
-        leftAnchorConstraint?.constant = $0.frame.origin.x
-        widthAnchorConstraint?.constant = $0.bounds.size.width
-        
-        UIView.animate(withDuration: 0.3, animations: {
-          self.layoutIfNeeded()
-        })
+        leftAnchorConstraint.constant = $0.frame.origin.x
+        widthAnchorConstraint.constant = $0.bounds.size.width
       }
-    }
+      
+      UIView.animate(withDuration: 0.3, animations: {
+        self.layoutIfNeeded()
+      }, completion: { (_) in
+      })
+    })
   }
   
-  private func setupViews() {
-    addSubview(barView)
-    
-    leftAnchorConstraint = barView.leftAnchor.constraint(equalTo: leftAnchor, constant: 0)
-    leftAnchorConstraint?.isActive = true
-    widthAnchorConstraint = barView.widthAnchor.constraint(equalToConstant: 0)
-    widthAnchorConstraint?.isActive = true
-    
-    NSLayoutConstraint.activate([
-      barView.bottomAnchor.constraint(equalTo: bottomAnchor),
-      barView.heightAnchor.constraint(equalToConstant: 3)
-      ])
+  private func setButtons(titles: [String]) {
+    for (i, title) in titles.enumerated() {
+      let btn = UIButton()
+      btn.addTarget(self, action: #selector(tapHandler), for: .touchUpInside)
+      btn.setTitle(title, for: .normal)
+      btn.tag = i
+      stackView.addArrangedSubview(btn)
+    }
   }
   
   @objc private func tapHandler(_ sender: UIButton) {
@@ -274,32 +240,65 @@ final class CStackView: UIStackView {
     update()
   }
   
-  func currentSize() -> CGFloat {
-    print(currentIndex, arrangedSubviews[currentIndex].frame.size.width)
-    return arrangedSubviews.count > 0 ? arrangedSubviews[currentIndex].frame.size.width : 0
+  private func totalSiz() -> CGFloat {
+    return stackView.arrangedSubviews.map { $0.bounds.width }.reduce(0, +)
   }
-  
-  func totalSiz() -> CGFloat {
-    return arrangedSubviews.map { $0.bounds.width }.reduce(0, +)
-  }
-  
-  func selected(index: Int) {
-    currentIndex = index
-    update()
-//    let subView = arrangedSubviews[index]
-//    print(index, leftAnchorConstraint?.constant, subView.frame.origin.x, subView.frame, barView.frame)
-    
-//    for (i, subView) in arrangedSubviews.enumerated() {
-//
-//      if let con = leftAnchorConstraint, (subView.frame.origin.x == con.constant)  {
-//        currentIndex = i
-//        update()
-//        print(i, con.constant, subView.frame.origin.x, subView.frame, barView.frame)
-//        break
-//      }
-//    }
-    
-  }
-  
-  
 }
+
+
+//final class CStackView: UIStackView {
+//  var tapHander: ((Int) -> ())?
+//
+//  private var textColor: UIColor?
+//  private var selectedTextColor: UIColor?
+//
+//  private var font: UIFont?
+//  private var selectedFont: UIFont?
+//  private var currentIndex = 0
+//
+//  override init(frame: CGRect) {
+//    super.init(frame: frame)
+//  }
+//
+//  required init(coder: NSCoder) {
+//    fatalError("init(coder:) has not been implemented")
+//  }
+//
+//  override func layoutSubviews() {
+//    super.layoutSubviews()
+//
+//    update()
+//  }
+//
+//  func configure(titles: [String], index: Int, textColor: UIColor, selectedTextColor: UIColor, font: UIFont, selectedFont: UIFont) {
+//
+//    self.currentIndex = index
+//    self.textColor = textColor
+//    self.selectedTextColor = selectedTextColor
+//    self.font = font
+//    self.selectedFont = selectedFont
+//    setButtons(titles: titles)
+//    update()
+//  }
+//
+//
+//
+//  func currentSize() -> CGRect {
+//    print(currentIndex, arrangedSubviews[currentIndex].frame.size.width)
+//    return arrangedSubviews.count > 0 ? arrangedSubviews[currentIndex].frame : CGRect()
+//  }
+//
+//  func selected(index: Int) {
+//    currentIndex = index
+//    update()
+//  }
+//
+//  private func update() {
+//    let _  = arrangedSubviews.map {
+//      let isSelected = $0.tag == currentIndex
+//      ($0 as? UIButton)?.setTitleColor(isSelected ? selectedTextColor : textColor, for: .normal)
+//      ($0 as? UIButton)?.titleLabel?.font = isSelected ? selectedFont : font
+//      layoutIfNeeded()
+//    }
+//  }
+//}
